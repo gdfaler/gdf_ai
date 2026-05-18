@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GDF AI</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo">GDF AI</div>
+
+    <button class="side-btn">+ New Chat</button>
+    <button class="side-btn">History</button>
+    <button class="side-btn">Settings</button>
+</div>
+
+<div class="main">
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+        <input
+            id="message"
+            type="text"
+            placeholder="Message GDF AI..."
+        >
+
+        <button onclick="sendMessage()">
+            Send
+        </button>
+    </div>
+
+</div>
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>
