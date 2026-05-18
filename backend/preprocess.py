@@ -1,40 +1,27 @@
-import os
-import json
+from pathlib import Path
 import numpy as np
 import sentencepiece as spm
 
+BASE_DIR = Path(__file__).resolve().parent
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TRAIN_TXT_PATH = BASE_DIR / "train.txt"
+TOKENIZER_PATH = BASE_DIR / "tokenizer.model"
+TOKENS_PATH = BASE_DIR / "tokens.npy"
 
-TOKENIZER_PATH = os.path.join(BASE_DIR, "tokenizer.model")
-DATASET_PATH = os.path.join(BASE_DIR, "dataset.jsonl")
-TOKENS_PATH = os.path.join(BASE_DIR, "tokens.npy")
-
+print("Loading tokenizer:", TOKENIZER_PATH)
 
 sp = spm.SentencePieceProcessor(
-    model_file=TOKENIZER_PATH
+    model_file=str(TOKENIZER_PATH)
 )
 
+with open(TRAIN_TXT_PATH, "r", encoding="utf-8") as f:
+    text = f.read()
 
-tokens = []
-
-with open(DATASET_PATH, "r", encoding="utf-8") as f:
-    for line in f:
-        item = json.loads(line)
-
-        q = item.get("question", "")
-        a = item.get("answer", "")
-
-        text = f"User: {q}\nAI: {a}"
-
-        ids = sp.encode(text)
-
-        tokens.extend(ids)
-
+tokens = sp.encode(text)
 
 tokens = np.array(tokens, dtype=np.uint16)
 
 np.save(TOKENS_PATH, tokens)
 
-print("Saved:", TOKENS_PATH)
-print("Tokens:", len(tokens))
+print("Saved tokens:", TOKENS_PATH)
+print("Total tokens:", len(tokens))

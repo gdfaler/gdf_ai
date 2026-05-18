@@ -1,38 +1,97 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>GDF AI</title>
-
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-
-<div class="sidebar">
-    <div class="logo">GDF AI</div>
-
-    <button class="side-btn">+ New Chat</button>
-    <button class="side-btn">History</button>
-    <button class="side-btn">Settings</button>
-</div>
-
-<div class="main">
-
-    <div class="chat" id="chat"></div>
-
-    <div class="input-area">
-        <input
-            id="message"
-            type="text"
-            placeholder="Message GDF AI..."
-        >
-
-        <button onclick="sendMessage()">
-            Send
+            <span>+</span>
+            New Chat
         </button>
-    </div>
+
+        <div class="section-title">
+            RECENT CHATS
+        </div>
+
+        <div class="chat-list" id="chatList">
+            <div class="chat-item active">
+                Main conversation
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button class="sidebar-btn">
+                Settings
+            </button>
+
+            <button class="sidebar-btn">
+                Clear Chat
+            </button>
+        </div>
+
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <div>
+                <div class="top-title">GDF AI</div>
+                <div class="top-subtitle">
+                    Local neural network powered by PyTorch
+                </div>
+            </div>
+
+            <div class="status">
+                <div class="status-dot"></div>
+                Online
+            </div>
+        </div>
+
+        <div class="chat" id="chat">
+
+            <div class="welcome">
+                <h1>How can I help you today?</h1>
+
+                <div class="welcome-grid">
+
+                    <button onclick="quickPrompt('Напиши сайт на Flask')">
+                        Flask backend
+                    </button>
+
+                    <button onclick="quickPrompt('Объясни attention')">
+                        Explain transformers
+                    </button>
+
+                    <button onclick="quickPrompt('Напиши красивый UI')">
+                        UI design
+                    </button>
+
+                    <button onclick="quickPrompt('Помоги оптимизировать модель')">
+                        AI optimization
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="input-wrap">
+
+            <div class="input-box">
+
+                <textarea
+                    id="message"
+                    placeholder="Message GDF AI..."
+                    rows="1"
+                ></textarea>
+
+                <button class="send-btn" onclick="sendMessage()">
+                    ➜
+                </button>
+
+            </div>
+
+            <div class="footer-text">
+                GDF AI can make mistakes. Check important information.
+            </div>
+
+        </div>
+
+    </main>
 
 </div>
 

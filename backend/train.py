@@ -83,7 +83,4 @@ def train():
                     CHECKPOINT_PATH
                 )
 
-    torch.save(model.state_dict(), CHECKPOINT_PATH)
-
-    print("Training finished")
     train()

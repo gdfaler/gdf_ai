@@ -81,4 +81,17 @@ class Block(nn.Module):
     def forward(self, x):
         x = x + self.attn(self.norm1(x))
         x = x + self.ff(self.norm2(x))
+        return x
+
+
+class LLaMAMini(nn.Module):
+    def __init__(
+        self,
+        vocab_size,
+        block_size,
+        dim=512,
+        layers=8
+    ):
+        super().__init__()
+
         return logits
