@@ -307,8 +307,14 @@ body.light-theme .sidebar-btn:not(.primary):hover {
     color: var(--text-muted);
     cursor: pointer;
     margin-bottom: 2px;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-out), box-shadow 0.2s;
     position: relative;
+    animation: chatItemIn 0.35s var(--ease-out) both;
+}
+
+@keyframes chatItemIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .chat-item-body {
@@ -324,6 +330,7 @@ body.light-theme .sidebar-btn:not(.primary):hover {
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
+    user-select: none;
 }
 
 .chat-item-date {
@@ -331,7 +338,8 @@ body.light-theme .sidebar-btn:not(.primary):hover {
     opacity: 0.5;
 }
 
-.chat-item-delete {
+.chat-item-delete,
+.chat-item-rename {
     opacity: 0;
     width: 24px;
     height: 24px;
@@ -339,7 +347,7 @@ body.light-theme .sidebar-btn:not(.primary):hover {
     border-radius: 8px;
     background: transparent;
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     flex-shrink: 0;
     transition: opacity 0.15s, background 0.15s, color 0.15s;
@@ -350,8 +358,15 @@ body.light-theme .sidebar-btn:not(.primary):hover {
 }
 
 .chat-item:hover .chat-item-delete,
-.chat-item-delete:focus {
+.chat-item:hover .chat-item-rename,
+.chat-item-delete:focus,
+.chat-item-rename:focus {
     opacity: 1;
+}
+
+.chat-item-rename:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
 }
 
 .chat-item-delete:hover {
@@ -368,19 +383,29 @@ body.light-theme .sidebar-btn:not(.primary):hover {
     transition: opacity 0.2s;
 }
 
-.chat-item.active .chat-item-dot,
-.chat-item:hover .chat-item-dot {
-    opacity: 1;
+.chat-item.active {
+    background: var(--surface);
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 9px;
 }
 
-.chat-item.active,
-.chat-item:hover {
+.chat-item.active .chat-item-dot {
+    opacity: 1;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.chat-item:hover:not(.active) {
     background: var(--surface);
     color: var(--text);
 }
 
+.chat-item:hover .chat-item-dot {
+    opacity: 0.6;
+}
+
 body.light-theme .chat-item.active,
-body.light-theme .chat-item:hover {
+body.light-theme .chat-item:hover:not(.active) {
     background: var(--surface-solid);
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
@@ -409,12 +434,68 @@ body.light-theme .chat-item:hover {
     background: var(--topbar-bg);
     backdrop-filter: blur(20px);
     transition: background 0.35s, border-color 0.35s;
+    gap: 12px;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, transform 0.15s, border-color 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+    transform: translateY(-1px);
+}
+
+.burger {
+    display: none;
 }
 
 .top-title {
     font-size: 17px;
     font-weight: 600;
     letter-spacing: -0.2px;
+    cursor: default;
+    user-select: none;
+}
+
+.topbar-title-area {
+    min-width: 0;
+    flex: 1;
+}
+
+.topbar-title-area.has-chat .top-title {
+    cursor: pointer;
 }
 
 .top-subtitle {
@@ -479,6 +560,13 @@ body.light-theme .status-dot {
     margin: 48px auto 0;
     text-align: center;
     animation: welcomeIn 0.8s var(--ease-out) both;
+    transition: opacity 0.28s var(--ease-out), transform 0.28s var(--ease-out);
+}
+
+.welcome.welcome-leaving {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+    pointer-events: none;
 }
 
 @keyframes welcomeIn {
@@ -670,6 +758,93 @@ body.light-theme .welcome-grid button {
 
 .message-body {
     max-width: calc(100% - 46px);
+    position: relative;
+}
+
+.message-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+.msg-action-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+.msg-action-btn:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    transform: scale(1.05);
+}
+
+.message-content.markdown-body {
+    white-space: normal;
+}
+
+.markdown-body p {
+    margin: 0 0 0.6em;
+}
+
+.markdown-body p:last-child {
+    margin-bottom: 0;
+}
+
+.markdown-body strong {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.markdown-body code {
+    font-family: "Cascadia Code", "Fira Code", monospace;
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.markdown-body pre {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 0.6em 0;
+}
+
+body.light-theme .markdown-body pre {
+    background: #f1f5f9;
+}
+
+.markdown-body pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+    margin: 0.4em 0 0.6em 1.2em;
+}
+
+.markdown-body li {
+    margin-bottom: 0.25em;
 }
 
 .message-content {
@@ -719,7 +894,50 @@ body.light-theme .welcome-grid button {
     display: none;
 }
 
-/* Thinking indicator */
+/* Thinking shimmer */
+
+.thinking-shimmer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
+    min-width: 180px;
+}
+
+.shimmer-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shimmer-line {
+    height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(
+        90deg,
+        var(--surface) 0%,
+        var(--accent-soft) 50%,
+        var(--surface) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.shimmer-line.short { width: 55%; animation-delay: 0.1s; }
+.shimmer-line.medium { width: 75%; animation-delay: 0.2s; }
+
+@keyframes shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.thinking-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Thinking indicator (legacy dots fallback) */
 
 .thinking-dots {
     display: flex;
@@ -799,29 +1017,98 @@ textarea::placeholder {
     color: var(--text-muted);
 }
 
-.send-btn {
+.send-controls {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+}
+
+.send-btn,
+.stop-btn {
+    position: absolute;
+    inset: 0;
     width: 46px;
     height: 46px;
     border: none;
     border-radius: 14px;
-    background: var(--user-gradient);
-    color: white;
     cursor: pointer;
-    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s var(--ease-out), box-shadow 0.2s;
+    transition:
+        opacity 0.32s var(--ease-out),
+        transform 0.32s var(--ease-out),
+        box-shadow 0.32s var(--ease-out);
+}
+
+.send-btn {
+    background: var(--user-gradient);
+    color: white;
     box-shadow: 0 4px 16px var(--accent-glow);
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    pointer-events: auto;
+    z-index: 2;
 }
 
 .send-btn:hover {
-    transform: scale(1.06);
+    transform: scale(1.06) rotate(0deg);
     box-shadow: 0 6px 24px var(--accent-glow);
 }
 
 .send-btn:active {
-    transform: scale(0.96);
+    transform: scale(0.96) rotate(0deg);
+}
+
+.stop-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+    opacity: 0;
+    transform: scale(0.5) rotate(90deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.send-controls.generating .send-btn {
+    opacity: 0;
+    transform: scale(0.5) rotate(-90deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.send-controls.generating .stop-btn {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    pointer-events: auto;
+    z-index: 2;
+    animation: stopAppear 0.32s var(--ease-out), stopPulse 1.4s ease-in-out 0.32s infinite;
+}
+
+.send-controls.generating .stop-btn:hover {
+    transform: scale(1.06) rotate(0deg);
+    box-shadow: 0 6px 24px rgba(239, 68, 68, 0.5);
+}
+
+.send-controls.generating .stop-btn:active {
+    transform: scale(0.96) rotate(0deg);
+}
+
+@keyframes stopAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.5) rotate(90deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes stopPulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35); }
+    50% { box-shadow: 0 4px 28px rgba(239, 68, 68, 0.55); }
 }
 
 .footer-text {
@@ -851,6 +1138,47 @@ textarea::placeholder {
 .modal-overlay.open {
     opacity: 1;
     pointer-events: auto;
+}
+
+#renameModal {
+    z-index: 101;
+}
+
+.modal-rename {
+    max-width: 400px;
+}
+
+.rename-modal-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.rename-modal-input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rename-modal-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--input-focus-ring);
+}
+
+body.light-theme .rename-modal-input {
+    background: var(--surface-solid);
 }
 
 .modal {
@@ -1118,10 +1446,78 @@ body.light-theme .message.user .message-avatar {
     color: #fff;
 }
 
+/* ── Toast ── */
+
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--modal-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s var(--ease-out);
+    z-index: 200;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ── Mobile sidebar ── */
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 40;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.sidebar-overlay.open {
+    display: block;
+    opacity: 1;
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 768px) {
+    .burger {
+        display: flex;
+    }
+
     .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.32s var(--ease-out);
+        box-shadow: none;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 40px rgba(0, 0, 0, 0.25);
+    }
+
+    body.light-theme .sidebar.open {
+        box-shadow: 8px 0 40px rgba(15, 23, 42, 0.12);
+    }
+
+    .topbar-actions .icon-btn:not(#regenBtn) {
         display: none;
     }
 
@@ -1139,5 +1535,9 @@ body.light-theme .message.user .message-avatar {
 
     .topbar {
         padding: 14px 16px;
+    }
+
+    .message-actions {
+        opacity: 1;
     }
 }
