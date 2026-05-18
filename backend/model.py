@@ -69,11 +69,11 @@ class FeedForward(nn.Module):
 
 
 class Block(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, heads=4):
         super().__init__()
 
         self.norm1 = RMSNorm(dim)
-        self.attn = Attention(dim)
+        self.attn = Attention(dim, heads=heads)
 
         self.norm2 = RMSNorm(dim)
         self.ff = FeedForward(dim)
@@ -89,9 +89,34 @@ class LLaMAMini(nn.Module):
         self,
         vocab_size,
         block_size,
-        dim=512,
-        layers=8
+        dim=256,
+        layers=4,
+        heads=4
     ):
         super().__init__()
 
-        return logits
+        self.block_size = block_size
+        self.token_emb = nn.Embedding(vocab_size, dim)
+        self.pos_emb = nn.Embedding(block_size, dim)
+        self.blocks = nn.ModuleList(
+            Block(dim, heads=heads) for _ in range(layers)
+        )
+        self.norm = RMSNorm(dim)
+        self.lm_head = nn.Linear(dim, vocab_size, bias=False)
+
+        self.lm_head.weight = self.token_emb.weight
+
+    def forward(self, idx):
+        idx = idx[:, -self.block_size:]
+
+        B, T = idx.shape
+        pos = torch.arange(T, device=idx.device)
+
+        x = self.token_emb(idx) + self.pos_emb(pos)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.norm(x)
+
+        return self.lm_head(x)

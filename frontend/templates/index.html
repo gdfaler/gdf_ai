@@ -1,5 +1,37 @@
 <!DOCTYPE html>
-            <span>+</span>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GDF AI</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-overlay"></div>
+</div>
+
+<div class="app">
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <span class="logo-icon">✦</span>
+            GDF AI
+        </div>
+
+        <button class="sidebar-btn primary" onclick="newChat()">
+            <span class="btn-icon">+</span>
             New Chat
         </button>
 
@@ -7,19 +39,12 @@
             RECENT CHATS
         </div>
 
-        <div class="chat-list" id="chatList">
-            <div class="chat-item active">
-                Main conversation
-            </div>
-        </div>
+        <div class="chat-list" id="chatList"></div>
 
         <div class="sidebar-bottom">
-            <button class="sidebar-btn">
+            <button class="sidebar-btn" onclick="openSettings()">
+                <span class="btn-icon">⚙</span>
                 Settings
-            </button>
-
-            <button class="sidebar-btn">
-                Clear Chat
             </button>
         </div>
 
@@ -29,8 +54,8 @@
 
         <div class="topbar">
             <div>
-                <div class="top-title">GDF AI</div>
-                <div class="top-subtitle">
+                <div class="top-title" id="chatTitle">GDF AI</div>
+                <div class="top-subtitle" id="chatSubtitle">
                     Local neural network powered by PyTorch
                 </div>
             </div>
@@ -44,24 +69,34 @@
         <div class="chat" id="chat">
 
             <div class="welcome">
+                <div class="welcome-badge">Neural Assistant</div>
                 <h1>How can I help you today?</h1>
+                <p class="welcome-sub">Ask anything — code, design, AI, or creative ideas</p>
 
                 <div class="welcome-grid">
 
                     <button onclick="quickPrompt('Напиши сайт на Flask')">
-                        Flask backend
+                        <span class="card-icon">⚡</span>
+                        <span class="card-title">Flask backend</span>
+                        <span class="card-desc">REST API & routes</span>
                     </button>
 
                     <button onclick="quickPrompt('Объясни attention')">
-                        Explain transformers
+                        <span class="card-icon">🧠</span>
+                        <span class="card-title">Explain transformers</span>
+                        <span class="card-desc">Attention mechanism</span>
                     </button>
 
                     <button onclick="quickPrompt('Напиши красивый UI')">
-                        UI design
+                        <span class="card-icon">🎨</span>
+                        <span class="card-title">UI design</span>
+                        <span class="card-desc">Modern interfaces</span>
                     </button>
 
                     <button onclick="quickPrompt('Помоги оптимизировать модель')">
-                        AI optimization
+                        <span class="card-icon">🚀</span>
+                        <span class="card-title">AI optimization</span>
+                        <span class="card-desc">Training & inference</span>
                     </button>
 
                 </div>
@@ -79,8 +114,10 @@
                     rows="1"
                 ></textarea>
 
-                <button class="send-btn" onclick="sendMessage()">
-                    ➜
+                <button class="send-btn" onclick="sendMessage()" aria-label="Send">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </button>
 
             </div>
@@ -93,6 +130,90 @@
 
     </main>
 
+</div>
+
+<div class="modal-overlay" id="settingsModal" onclick="closeSettingsOnBackdrop(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Settings</h2>
+            <button class="modal-close" onclick="closeSettings()" aria-label="Close">×</button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="setting-group">
+                <label class="setting-label">
+                    Max tokens
+                    <span class="setting-value" id="maxTokensValue">80</span>
+                </label>
+                <input type="range" id="maxTokens" min="20" max="200" step="10" value="80">
+                <p class="setting-hint">How many tokens the model generates per reply</p>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">
+                    Temperature
+                    <span class="setting-value" id="temperatureValue">0.0</span>
+                </label>
+                <input type="range" id="temperature" min="0" max="150" step="5" value="0">
+                <p class="setting-hint">0 = deterministic, higher = more creative</p>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Font size</label>
+                <div class="setting-segment">
+                    <button type="button" data-font="13" onclick="setFontSize(13)">S</button>
+                    <button type="button" data-font="15" class="active" onclick="setFontSize(15)">M</button>
+                    <button type="button" data-font="17" onclick="setFontSize(17)">L</button>
+                </div>
+            </div>
+
+            <div class="setting-group setting-row">
+                <div>
+                    <div class="setting-label">Typing animation</div>
+                    <p class="setting-hint">Animate AI responses character by character</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="typingAnimation" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-group setting-row">
+                <div>
+                    <div class="setting-label">Send on Enter</div>
+                    <p class="setting-hint">Shift+Enter for new line</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="enterToSend" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-group setting-row">
+                <div>
+                    <div class="setting-label">Light theme</div>
+                    <p class="setting-hint">Switch to a lighter color scheme</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="lightTheme">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <button class="danger-btn" onclick="clearAllChats()">
+                Delete all chats
+            </button>
+
+        </div>
+
+        <div class="modal-footer">
+            <button class="modal-btn secondary" onclick="closeSettings()">Cancel</button>
+            <button class="modal-btn primary" onclick="saveSettings()">Save</button>
+        </div>
+    </div>
 </div>
 
 <script src="/static/app.js"></script>

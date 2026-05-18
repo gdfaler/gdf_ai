@@ -1,23 +1,30 @@
 import os
 import torch
 import torch.nn.functional as F
+import sentencepiece as spm
 
 from torch.utils.data import DataLoader
 
+from config import (
+    BATCH_SIZE,
+    BLOCK_SIZE,
+    DIM,
+    EPOCHS,
+    HEADS,
+    LAYERS,
+    LR,
+    VOCAB_SIZE,
+)
 from model import LLaMAMini
 from dataset import TokenDataset
+from generate_utils import build_prompt
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+TOKENIZER_PATH = os.path.join(BASE_DIR, "tokenizer.model")
 TOKENS_PATH = os.path.join(BASE_DIR, "tokens.npy")
 CHECKPOINT_PATH = os.path.join(BASE_DIR, "checkpoint.pt")
-
-
-BATCH_SIZE = 16
-BLOCK_SIZE = 256
-EPOCHS = 1
-LR = 3e-4
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -25,7 +32,32 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Device:", device)
 
 
+def get_vocab_size():
+    sp = spm.SentencePieceProcessor(model_file=TOKENIZER_PATH)
+    size = sp.get_piece_size()
+    return min(size, VOCAB_SIZE)
+
+
+def generate_sample(model, sp, prompt_text):
+    model.eval()
+    prompt = build_prompt(prompt_text)
+    ids = sp.encode(prompt)
+    x = torch.tensor([ids], dtype=torch.long).to(device)
+
+    with torch.no_grad():
+        for _ in range(80):
+            logits = model(x)
+            next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
+            x = torch.cat([x, next_token], dim=1)
+
+    out = sp.decode(x[0, len(ids):].tolist())
+    return out.split("\n")[0].strip()
+
+
 def train():
+    vocab_size = get_vocab_size()
+    print(f"Vocab size: {vocab_size}")
+
     dataset = TokenDataset(TOKENS_PATH, BLOCK_SIZE)
 
     loader = DataLoader(
@@ -36,11 +68,14 @@ def train():
     )
 
     model = LLaMAMini(
-        vocab_size=4000,
+        vocab_size=vocab_size,
         block_size=BLOCK_SIZE,
-        dim=512,
-        layers=8
+        dim=DIM,
+        layers=LAYERS,
+        heads=HEADS
     ).to(device)
+
+    print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -69,18 +104,24 @@ def train():
                 )
 
             scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(optimizer)
             scaler.update()
 
-            if step % 50 == 0:
+            if step % 20 == 0:
                 print(
-                    f"epoch {epoch} step {step} loss {loss.item():.4f}"
+                    f"epoch {epoch} step {step} loss {loss.item():.4f}",
+                    flush=True
                 )
 
-            if step % 500 == 0:
-                torch.save(
-                    model.state_dict(),
-                    CHECKPOINT_PATH
-                )
+    torch.save(model.state_dict(), CHECKPOINT_PATH)
 
+    sp = spm.SentencePieceProcessor(model_file=TOKENIZER_PATH)
+    sample = generate_sample(model, sp, "Объясни attention")
+    print("Sample:", sample.encode("utf-8", errors="replace").decode("utf-8"), flush=True)
+    print("Training finished", flush=True)
+
+
+if __name__ == "__main__":
     train()
