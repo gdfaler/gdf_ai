@@ -21,28 +21,28 @@
     <div class="grid-overlay"></div>
 </div>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <div class="app">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
 
         <div class="logo">
             <span class="logo-icon">✦</span>
             GDF AI
         </div>
 
-        <button class="sidebar-btn primary" onclick="newChat()">
+        <button class="sidebar-btn primary" onclick="newChat(); closeSidebar()">
             <span class="btn-icon">+</span>
             New Chat
         </button>
 
-        <div class="section-title">
-            RECENT CHATS
-        </div>
+        <div class="section-title">RECENT CHATS</div>
 
         <div class="chat-list" id="chatList"></div>
 
         <div class="sidebar-bottom">
-            <button class="sidebar-btn" onclick="openSettings()">
+            <button class="sidebar-btn" onclick="openSettings(); closeSidebar()">
                 <span class="btn-icon">⚙</span>
                 Settings
             </button>
@@ -53,83 +53,102 @@
     <main class="main">
 
         <div class="topbar">
-            <div>
-                <div class="top-title" id="chatTitle">GDF AI</div>
-                <div class="top-subtitle" id="chatSubtitle">
-                    Local neural network powered by PyTorch
+            <div class="topbar-left">
+                <button class="icon-btn burger" id="burgerBtn" onclick="toggleSidebar()" aria-label="Menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="topbar-title-area">
+                    <div class="top-title" id="chatTitle">GDF AI</div>
+                    <div class="top-subtitle" id="chatSubtitle">
+                        Local neural network powered by PyTorch
+                    </div>
                 </div>
             </div>
 
-            <div class="status">
-                <div class="status-dot"></div>
-                Online
+            <div class="topbar-right">
+                <div class="topbar-actions" id="topbarActions">
+                    <button class="icon-btn" onclick="openRenameModal()" title="Rename chat" id="renameBtn" hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" onclick="exportChat('txt')" title="Export as TXT" id="exportBtn" hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" onclick="exportChat('json')" title="Export as JSON" id="exportJsonBtn" hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 7V4h16v3M9 20h6M12 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" onclick="regenerateLast()" title="Regenerate" id="regenBtn" hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M20.49 9A9 9 0 005.64 5.64L1 10M3.51 15a9 9 0 0014.85 3.36L23 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="status">
+                    <div class="status-dot"></div>
+                    Online
+                </div>
             </div>
         </div>
 
         <div class="chat" id="chat">
-
-            <div class="welcome">
+            <div class="welcome" id="welcome">
                 <div class="welcome-badge">Neural Assistant</div>
                 <h1>How can I help you today?</h1>
                 <p class="welcome-sub">Ask anything — code, design, AI, or creative ideas</p>
-
                 <div class="welcome-grid">
-
                     <button onclick="quickPrompt('Напиши сайт на Flask')">
                         <span class="card-icon">⚡</span>
                         <span class="card-title">Flask backend</span>
                         <span class="card-desc">REST API & routes</span>
                     </button>
-
                     <button onclick="quickPrompt('Объясни attention')">
                         <span class="card-icon">🧠</span>
                         <span class="card-title">Explain transformers</span>
                         <span class="card-desc">Attention mechanism</span>
                     </button>
-
                     <button onclick="quickPrompt('Напиши красивый UI')">
                         <span class="card-icon">🎨</span>
                         <span class="card-title">UI design</span>
                         <span class="card-desc">Modern interfaces</span>
                     </button>
-
                     <button onclick="quickPrompt('Помоги оптимизировать модель')">
                         <span class="card-icon">🚀</span>
                         <span class="card-title">AI optimization</span>
                         <span class="card-desc">Training & inference</span>
                     </button>
-
                 </div>
             </div>
-
         </div>
 
         <div class="input-wrap">
-
             <div class="input-box">
-
-                <textarea
-                    id="message"
-                    placeholder="Message GDF AI..."
-                    rows="1"
-                ></textarea>
-
-                <button class="send-btn" onclick="sendMessage()" aria-label="Send">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-
+                <textarea id="message" placeholder="Message GDF AI..." rows="1"></textarea>
+                <div class="send-controls" id="sendControls">
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Send">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="stop-btn" id="stopBtn" onclick="stopGeneration()" aria-label="Stop">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
-
-            <div class="footer-text">
-                GDF AI can make mistakes. Check important information.
-            </div>
-
+            <div class="footer-text">GDF AI can make mistakes. Check important information.</div>
         </div>
 
     </main>
-
 </div>
 
 <div class="modal-overlay" id="settingsModal" onclick="closeSettingsOnBackdrop(event)">
@@ -138,27 +157,17 @@
             <h2>Settings</h2>
             <button class="modal-close" onclick="closeSettings()" aria-label="Close">×</button>
         </div>
-
         <div class="modal-body">
-
             <div class="setting-group">
-                <label class="setting-label">
-                    Max tokens
-                    <span class="setting-value" id="maxTokensValue">80</span>
-                </label>
+                <label class="setting-label">Max tokens <span class="setting-value" id="maxTokensValue">80</span></label>
                 <input type="range" id="maxTokens" min="20" max="200" step="10" value="80">
                 <p class="setting-hint">How many tokens the model generates per reply</p>
             </div>
-
             <div class="setting-group">
-                <label class="setting-label">
-                    Temperature
-                    <span class="setting-value" id="temperatureValue">0.0</span>
-                </label>
+                <label class="setting-label">Temperature <span class="setting-value" id="temperatureValue">0.0</span></label>
                 <input type="range" id="temperature" min="0" max="150" step="5" value="0">
                 <p class="setting-hint">0 = deterministic, higher = more creative</p>
             </div>
-
             <div class="setting-group">
                 <label class="setting-label">Font size</label>
                 <div class="setting-segment">
@@ -167,48 +176,30 @@
                     <button type="button" data-font="17" onclick="setFontSize(17)">L</button>
                 </div>
             </div>
-
             <div class="setting-group setting-row">
                 <div>
                     <div class="setting-label">Typing animation</div>
                     <p class="setting-hint">Animate AI responses character by character</p>
                 </div>
-                <label class="toggle">
-                    <input type="checkbox" id="typingAnimation" checked>
-                    <span class="toggle-slider"></span>
-                </label>
+                <label class="toggle"><input type="checkbox" id="typingAnimation" checked><span class="toggle-slider"></span></label>
             </div>
-
             <div class="setting-group setting-row">
                 <div>
                     <div class="setting-label">Send on Enter</div>
                     <p class="setting-hint">Shift+Enter for new line</p>
                 </div>
-                <label class="toggle">
-                    <input type="checkbox" id="enterToSend" checked>
-                    <span class="toggle-slider"></span>
-                </label>
+                <label class="toggle"><input type="checkbox" id="enterToSend" checked><span class="toggle-slider"></span></label>
             </div>
-
             <div class="setting-group setting-row">
                 <div>
                     <div class="setting-label">Light theme</div>
                     <p class="setting-hint">Switch to a lighter color scheme</p>
                 </div>
-                <label class="toggle">
-                    <input type="checkbox" id="lightTheme">
-                    <span class="toggle-slider"></span>
-                </label>
+                <label class="toggle"><input type="checkbox" id="lightTheme"><span class="toggle-slider"></span></label>
             </div>
-
             <div class="setting-divider"></div>
-
-            <button class="danger-btn" onclick="clearAllChats()">
-                Delete all chats
-            </button>
-
+            <button class="danger-btn" onclick="clearAllChats()">Delete all chats</button>
         </div>
-
         <div class="modal-footer">
             <button class="modal-btn secondary" onclick="closeSettings()">Cancel</button>
             <button class="modal-btn primary" onclick="saveSettings()">Save</button>
@@ -216,6 +207,27 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="renameModal" onclick="closeRenameModalBackdrop(event)">
+    <div class="modal modal-rename" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Rename chat</h2>
+            <button class="modal-close" onclick="closeRenameModal()" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+            <label class="rename-modal-label" for="renameModalInput">Name</label>
+            <input type="text" id="renameModalInput" class="rename-modal-input" maxlength="64" placeholder="e.g. PyTorch help" autocomplete="off">
+            <p class="setting-hint">Shown in the sidebar and header. Max 64 characters.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn secondary" onclick="closeRenameModal()">Cancel</button>
+            <button class="modal-btn primary" onclick="submitRenameModal()">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="/static/app.js"></script>
 
 </body>
