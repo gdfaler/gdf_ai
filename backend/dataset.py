@@ -1,25 +1,40 @@
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 
 
-class TokenDataset(Dataset):
-    def __init__(self, path, block_size):
-        self.data = np.load(path)
-        self.block_size = block_size
+def load_splits(path, block_size, val_fraction):
+    """Токены с диска → (train, val).
 
-    def __len__(self):
-        return len(self.data) - self.block_size - 1
+    Файл открывается через memmap: в память попадают только прочитанные окна,
+    поэтому подходит и для корпусов в гигабайты. Проверочная часть — хвост
+    файла, но не меньше 4 окон.
+    """
+    data = np.load(path, mmap_mode="r")
 
-    def __getitem__(self, idx):
-        x = torch.tensor(
-            self.data[idx:idx + self.block_size],
-            dtype=torch.long
+    n_val = max(int(len(data) * val_fraction), 4 * (block_size + 1))
+
+    if len(data) - n_val < 2 * (block_size + 1):
+        raise ValueError(
+            f"в {path} всего {len(data)} токенов — мало для block_size={block_size}"
         )
 
-        y = torch.tensor(
-            self.data[idx + 1:idx + self.block_size + 1],
-            dtype=torch.long
+    return data[:-n_val], data[-n_val:]
+
+
+def get_batch(data, batch_size, block_size, device):
+    """Случайные окна: x — вход, y — те же токены со сдвигом на один."""
+    ix = torch.randint(len(data) - block_size, (batch_size,)).tolist()
+
+    x = np.stack([data[i:i + block_size] for i in ix]).astype(np.int64)
+    y = np.stack([data[i + 1:i + block_size + 1] for i in ix]).astype(np.int64)
+
+    x = torch.from_numpy(x)
+    y = torch.from_numpy(y)
+
+    if device == "cuda":
+        return (
+            x.pin_memory().to(device, non_blocking=True),
+            y.pin_memory().to(device, non_blocking=True)
         )
 
-        return x, y
+    return x.to(device), y.to(device)

@@ -194,12 +194,13 @@ class LLaMAMini(nn.Module):
         return self.lm_head(x), new_cache
 
 
-def save_checkpoint(model, path):
-    torch.save({"config": model.config, "model": model.state_dict()}, path)
+def save_checkpoint(model, path, **extra):
+    """extra — что-то сверх весов, например состояние оптимизатора."""
+    torch.save({"config": model.config, "model": model.state_dict(), **extra}, path)
 
 
-def load_checkpoint(path, device, vocab_size=None):
-    """Собирает модель по настройкам из чекпоинта и строго грузит веса."""
+def read_checkpoint(path, device, vocab_size=None):
+    """Читает чекпоинт и проверяет, что он подходит к коду и токенизатору."""
     path = Path(path)
 
     if not path.exists():
@@ -220,6 +221,13 @@ def load_checkpoint(path, device, vocab_size=None):
             f"словарь модели ({ckpt['config']['vocab_size']}) не совпадает "
             f"с токенизатором ({vocab_size}) — переобучи: python backend/train.py"
         )
+
+    return ckpt
+
+
+def load_checkpoint(path, device, vocab_size=None):
+    """Собирает модель по настройкам из чекпоинта и строго грузит веса."""
+    ckpt = read_checkpoint(path, device, vocab_size)
 
     model = LLaMAMini(**ckpt["config"]).to(device)
     model.load_state_dict(ckpt["model"])
