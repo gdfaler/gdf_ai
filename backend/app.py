@@ -1,4 +1,3 @@
-import os
 import torch
 import sentencepiece as spm
 
@@ -9,28 +8,22 @@ from flask import jsonify
 
 from config import (
     BLOCK_SIZE,
+    CHECKPOINT_PATH,
     DIM,
     HEADS,
     LAYERS,
     MAX_GEN_TOKENS,
     REPETITION_PENALTY,
+    TOKENIZER_PATH,
     TOP_K,
-    VOCAB_SIZE,
 )
-from model import LLaMAMini
+from model import LLaMAMini, load_checkpoint
 from generate_utils import (
-    apply_repetition_penalty,
     build_prompt,
     clean_response,
-    sample_token,
+    generate,
     should_stop,
 )
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-TOKENIZER_PATH = os.path.join(BASE_DIR, "tokenizer.model")
-CHECKPOINT_PATH = os.path.join(BASE_DIR, "checkpoint.pt")
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -38,35 +31,23 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Device:", device)
 
 sp = spm.SentencePieceProcessor(
-    model_file=TOKENIZER_PATH
+    model_file=str(TOKENIZER_PATH)
 )
 
-vocab_size = min(sp.get_piece_size(), VOCAB_SIZE)
-
-model = LLaMAMini(
-    vocab_size=vocab_size,
-    block_size=BLOCK_SIZE,
-    dim=DIM,
-    layers=LAYERS,
-    heads=HEADS
-).to(device)
-
-if os.path.exists(CHECKPOINT_PATH):
-    try:
-        state_dict = torch.load(
-            CHECKPOINT_PATH,
-            map_location=device
-        )
-
-        model.load_state_dict(
-            state_dict,
-            strict=False
-        )
-        print("Checkpoint loaded")
-    except (OSError, RuntimeError) as e:
-        print(f"Warning: failed to load checkpoint ({e}), using untrained model")
+if CHECKPOINT_PATH.exists():
+    # несовместимый чекпоинт — ошибка, а не тихий запуск на случайных весах
+    model = load_checkpoint(CHECKPOINT_PATH, device, vocab_size=sp.get_piece_size())
+    print("Checkpoint loaded")
 else:
     print("Warning: checkpoint not found, using untrained model")
+
+    model = LLaMAMini(
+        vocab_size=sp.get_piece_size(),
+        block_size=BLOCK_SIZE,
+        dim=DIM,
+        layers=LAYERS,
+        heads=HEADS
+    ).to(device)
 
 model.eval()
 
@@ -78,37 +59,17 @@ app = Flask(
 
 
 def generate_reply(user_text, max_tokens, temperature):
-    prompt = build_prompt(user_text)
-    ids = sp.encode(prompt)
-    prompt_len = len(ids)
+    ids = sp.encode(build_prompt(user_text))
 
-    x = torch.tensor([ids], dtype=torch.long).to(device)
-    generated_ids = []
-
-    with torch.no_grad():
-        for _ in range(max_tokens):
-            logits = model(x)
-            next_logits = logits[:, -1, :].squeeze(0)
-
-            next_logits = apply_repetition_penalty(
-                next_logits,
-                generated_ids,
-                REPETITION_PENALTY
-            )
-
-            next_token = sample_token(
-                next_logits.unsqueeze(0),
-                temperature,
-                TOP_K
-            )
-
-            token_id = next_token.item()
-            generated_ids.append(token_id)
-            x = torch.cat([x, next_token], dim=1)
-
-            partial = sp.decode(generated_ids)
-            if should_stop(partial):
-                break
+    generated_ids = generate(
+        model,
+        ids,
+        max_tokens,
+        temperature=temperature,
+        top_k=TOP_K,
+        repetition_penalty=REPETITION_PENALTY,
+        stop=lambda generated: should_stop(sp.decode(generated))
+    )
 
     out = sp.decode(generated_ids) if generated_ids else ""
     return clean_response(out)

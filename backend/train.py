@@ -1,4 +1,3 @@
-import os
 import torch
 import torch.nn.functional as F
 import sentencepiece as spm
@@ -8,23 +7,18 @@ from torch.utils.data import DataLoader
 from config import (
     BATCH_SIZE,
     BLOCK_SIZE,
+    CHECKPOINT_PATH,
     DIM,
     EPOCHS,
     HEADS,
     LAYERS,
     LR,
-    VOCAB_SIZE,
+    TOKENIZER_PATH,
+    TOKENS_PATH,
 )
-from model import LLaMAMini
+from model import LLaMAMini, save_checkpoint
 from dataset import TokenDataset
-from generate_utils import build_prompt
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-TOKENIZER_PATH = os.path.join(BASE_DIR, "tokenizer.model")
-TOKENS_PATH = os.path.join(BASE_DIR, "tokens.npy")
-CHECKPOINT_PATH = os.path.join(BASE_DIR, "checkpoint.pt")
+from generate_utils import build_prompt, clean_response, generate, should_stop
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -32,30 +26,23 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Device:", device)
 
 
-def get_vocab_size():
-    sp = spm.SentencePieceProcessor(model_file=TOKENIZER_PATH)
-    size = sp.get_piece_size()
-    return min(size, VOCAB_SIZE)
-
-
 def generate_sample(model, sp, prompt_text):
     model.eval()
-    prompt = build_prompt(prompt_text)
-    ids = sp.encode(prompt)
-    x = torch.tensor([ids], dtype=torch.long).to(device)
+    ids = sp.encode(build_prompt(prompt_text))
 
-    with torch.no_grad():
-        for _ in range(80):
-            logits = model(x)
-            next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
-            x = torch.cat([x, next_token], dim=1)
+    out = generate(
+        model,
+        ids,
+        max_new_tokens=80,
+        stop=lambda generated: should_stop(sp.decode(generated))
+    )
 
-    out = sp.decode(x[0, len(ids):].tolist())
-    return out.split("\n")[0].strip()
+    return clean_response(sp.decode(out))
 
 
 def train():
-    vocab_size = get_vocab_size()
+    sp = spm.SentencePieceProcessor(model_file=str(TOKENIZER_PATH))
+    vocab_size = sp.get_piece_size()
     print(f"Vocab size: {vocab_size}")
 
     dataset = TokenDataset(TOKENS_PATH, BLOCK_SIZE)
@@ -96,7 +83,7 @@ def train():
             optimizer.zero_grad()
 
             with torch.amp.autocast("cuda", enabled=(device == "cuda")):
-                logits = model(x)
+                logits, _ = model(x)
 
                 loss = F.cross_entropy(
                     logits.view(-1, logits.size(-1)),
@@ -115,9 +102,8 @@ def train():
                     flush=True
                 )
 
-    torch.save(model.state_dict(), CHECKPOINT_PATH)
+    save_checkpoint(model, CHECKPOINT_PATH)
 
-    sp = spm.SentencePieceProcessor(model_file=TOKENIZER_PATH)
     sample = generate_sample(model, sp, "Объясни attention")
     print("Sample:", sample.encode("utf-8", errors="replace").decode("utf-8"), flush=True)
     print("Training finished", flush=True)

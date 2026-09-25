@@ -33,6 +33,55 @@ def sample_token(logits, temperature, top_k):
     return torch.multinomial(probs, num_samples=1)
 
 
+@torch.no_grad()
+def generate(model, ids, max_new_tokens, temperature=0.0, top_k=0,
+             repetition_penalty=1.0, stop=None):
+    """Продолжает ids, возвращает список новых токенов.
+
+    Промпт прогоняется один раз, дальше модель получает по одному токену,
+    остальное берёт из KV-кэша. stop(generated_ids) -> True останавливает.
+    """
+    device = next(model.parameters()).device
+    block_size = model.block_size
+
+    ids = list(ids)
+    generated = []
+
+    x = ids[-block_size:]
+    cache = None
+    cached = 0
+
+    for _ in range(max_new_tokens):
+        logits, cache = model(
+            torch.tensor([x], dtype=torch.long, device=device),
+            cache
+        )
+        cached += len(x)
+
+        next_logits = apply_repetition_penalty(
+            logits[0, -1],
+            generated,
+            repetition_penalty
+        )
+        token = sample_token(next_logits.unsqueeze(0), temperature, top_k).item()
+
+        generated.append(token)
+        ids.append(token)
+
+        if stop is not None and stop(generated):
+            break
+
+        if cached < block_size:
+            x = [token]
+        else:
+            # окно заполнено: пересчитываем по последним block_size токенам
+            x = ids[-block_size:]
+            cache = None
+            cached = 0
+
+    return generated
+
+
 def should_stop(decoded_text):
     if "Пользователь:" in decoded_text:
         return True

@@ -1,12 +1,7 @@
-from pathlib import Path
 import numpy as np
 import sentencepiece as spm
 
-BASE_DIR = Path(__file__).resolve().parent
-
-TRAIN_TXT_PATH = BASE_DIR / "train.txt"
-TOKENIZER_PATH = BASE_DIR / "tokenizer.model"
-TOKENS_PATH = BASE_DIR / "tokens.npy"
+from config import TOKENIZER_PATH, TOKENS_PATH, TRAIN_TXT_PATH
 
 print("Loading tokenizer:", TOKENIZER_PATH)
 
