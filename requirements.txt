@@ -1,6 +1,7 @@
-torch
-torchvision
-torchaudio
-flask
-numpy
-sentencepiece
+# PyTorch со сборкой под CUDA 12.8 (нужна для RTX 50xx; без видеокарты работает на CPU)
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128
+
+numpy==2.4.4
+sentencepiece==0.2.1
+flask==3.1.3
