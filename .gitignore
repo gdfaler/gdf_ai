@@ -1,0 +1,13 @@
+# Окружение Python
+.venv/
+__pycache__/
+
+# Генерируемые файлы пайплайна (python backend/train_tokenizer.py → preprocess.py → train.py)
+*.pt
+backend/tokenizer.model
+backend/tokenizer.vocab
+backend/tokens.npy
+
+# Большие корпуса и архив старых весов — только локально
+data/
+archive/
